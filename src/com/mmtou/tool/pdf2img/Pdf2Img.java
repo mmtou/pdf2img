@@ -1,4 +1,4 @@
-package com.mmtou.test;
+package com.mmtou.tool.pdf2img;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
