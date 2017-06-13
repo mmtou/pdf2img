@@ -1,5 +1,5 @@
 # pdf2img
-pdf转图片
+1. 使用icepdf, convert pdf to images
 ```java
 /**
    * 将指定pdf文件的首页转换为指定路径的缩略图
@@ -33,3 +33,71 @@ pdf转图片
     }
   }
 ```
+
+2. 使用**pdfbox2.x** convert pdf to images  &  合同多个图片为一个图片
+```java
+/**
+   * pdf to big image
+   * 
+   * @param pdfPath pdf文件路径
+   * @return big image file
+   * @throws Exception
+   */
+  private File pdf2image(File pdfFile) throws Exception {
+    // 拼成图片后的宽度和高度
+    int w = 0;
+    int h = 0;
+    List<BufferedImage> images = Lists.newArrayList();
+    // 生成图片后的路径
+    String path = pdfFile.getParent() + File.separator;
+    String fileName = pdfFile.getName().replace(".pdf", "");
+
+    File destinationFile = new File(path);
+    if (!destinationFile.exists()) {
+      destinationFile.mkdir();
+    }
+    PDDocument document = PDDocument.load(pdfFile);
+    PDPageTree list = document.getDocumentCatalog().getPages();
+    int pageCounter = 0;
+    for (PDPage page : list) {
+      PDFRenderer pdfRenderer = new PDFRenderer(document);
+      BufferedImage image = pdfRenderer.renderImageWithDPI(pageCounter, 100, ImageType.RGB);
+      String target = path + fileName + "-" + (pageCounter++) + ".png";
+      ImageIOUtil.writeImage(image, target, 100);
+
+      w = image.getWidth();
+      h += image.getHeight();
+      images.add(image);
+      new File(target).delete();
+    }
+    document.close();
+
+    BufferedImage combined = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+    Graphics g = combined.getGraphics();
+
+    int y = 0;
+    for (BufferedImage image : images) {
+      g.drawImage(image, 0, y, null);
+      y += image.getHeight();
+    }
+
+    // Save as new image
+    File image = new File(path, fileName + ".png");
+    ImageIO.write(combined, "PNG", image);
+    return image;
+  }
+```
+pom.xml
+```xml
+<dependency>
+  <groupId>org.apache.pdfbox</groupId>
+  <artifactId>pdfbox</artifactId>
+  <version>2.0.6</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.pdfbox</groupId>
+  <artifactId>pdfbox-tools</artifactId>
+  <version>2.0.6</version>
+</dependency>
+```
+
